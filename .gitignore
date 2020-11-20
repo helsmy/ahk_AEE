@@ -1,4 +1,5 @@
 # test fold
 test
 # bake up
-.bak
+*.bak
+test.ahk

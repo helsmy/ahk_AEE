@@ -63,24 +63,7 @@ class AEEmitter
      */
     On(type, callback, prepend := false)
     {
-        if (!IsFunc(callback))
-            throw Exception("Value Error", -1, "Listener(callback) must be a function or method")
-        if (!this._events)
-            this._events := {}
-        events := this._events
-
-        if (events.HasKey("newListener"))
-            this.Emit("newListener", type, callback)
-        if (!events.HasKey(type))
-        {
-            events[type] := []
-            ++this._eventsCount
-        }
-        if (!prepend)
-            events[type].Push(callback)
-        else
-            events[type].InsertAt(1, callback)
-        return this
+        return this._AddListener(type, callback, prepend)
     }
 
     /**
@@ -92,6 +75,18 @@ class AEEmitter
     {
         return this.RemoveListener(type, callback)
     }
+    
+    /**
+     *   Add a listener to wait for a event
+     *   This listener will be removed Once it has been executed
+     *   @params: type event name waited
+     *   @params: callback listener
+     *   @params: prepend If ture, add listener to the head of listener list(will be execute earlier)
+     */
+    Once(type, listener, prepend := false)
+    {
+        return this._AddListener(type, listener, prepend, true)
+    }
 
     /**
      *   Add a listener to wait for a event
@@ -101,7 +96,7 @@ class AEEmitter
      */
     AddListener(type, listener, prepend := false)
     {
-        return this.On(type, listener, prepend := false)
+        return this._AddListener(type, listener, prepend)
     }
 
     /**
@@ -111,7 +106,7 @@ class AEEmitter
      */
     PrependListener(type, listener) 
     {
-        return this.On(type, listener, true)   
+        return this._AddListener(type, listener, true)   
     }
 
     /**
@@ -192,19 +187,6 @@ class AEEmitter
         return true
     }
 
-    Once(type, params*)
-    {
-        if (this._events.HasKey(type))
-        {
-            for _, handler in this._events[type]
-            {
-                fn := ObjBindMethod(this, "_OnceWapper", type, handler)
-                __AEE_EventDispatcher.Put(fn, params)
-            }
-        }
-        return true
-    }
-
     /*
      * Inner wapper for `Once` method to remove listener after executed
      * DO NOT CALL IT
@@ -213,10 +195,35 @@ class AEEmitter
     {
         events := this._events, list := events[type]
         fn.Call(params*)
-        if (list.Length != 0)
-            this.RemoveListener(type, fn)
-        else
+        if (list.Length <= 1)
             this.RemoveEvent(type)
+        else
+            this.RemoveListener(type, fn)
+    }
+    
+    /*
+     * Inner method
+     * DO NOT CALL IT
+     */
+    _AddListener(type, callback, prepend := false, isOnce := false)
+    {
+        if (!IsFunc(callback))
+            throw Exception("Value Error", -2, "Listener(callback) must be a function or method")
+        if (!this._events)
+            this._events := {}
+        events := this._events
+
+        if (events.HasKey("newListener"))
+            this.Emit("newListener", type, callback)
+        if (!events.HasKey(type))
+            events[type] := [], ++this._eventsCount
+        if (isOnce)
+            callback := ObjBindMethod(this, "_OnceWapper", type, callback)
+        if (!prepend)
+            events[type].Push(callback)
+        else
+            events[type].InsertAt(1, callback)
+        return this
     }
 }
 
@@ -226,6 +233,9 @@ class AEEmitter
 ; ***********************************************
 class __AEE_EventDispatcher
 {
+    /*
+     *  Based on DBGp_DispatchTimer of Lexikos's dbgp.ahk
+     */
 	static eventQueue := []
 	static immediateQueue := []
 
