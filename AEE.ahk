@@ -121,8 +121,7 @@ class AEEmitter
      */
     RemoveListener(type, listener)
     {
-        events := this._events
-        list := events[type]
+        events := this._events, list := events[type]
         postion := 0
         for p, l in list
         {
@@ -191,6 +190,33 @@ class AEEmitter
                 __AEE_EventDispatcher.Put(handler, params, true)
         }
         return true
+    }
+
+    Once(type, params*)
+    {
+        if (this._events.HasKey(type))
+        {
+            for _, handler in this._events[type]
+            {
+                fn := ObjBindMethod(this, "_OnceWapper", type, handler)
+                __AEE_EventDispatcher.Put(fn, params)
+            }
+        }
+        return true
+    }
+
+    /*
+     * Inner wapper for `Once` method to remove listener after executed
+     * DO NOT CALL IT
+     */
+    _OnceWapper(type, fn, params*)
+    {
+        events := this._events, list := events[type]
+        fn.Call(params*)
+        if (list.Length != 0)
+            this.RemoveListener(type, fn)
+        else
+            this.RemoveEvent(type)
     }
 }
 
