@@ -55,6 +55,12 @@ eventsCount(ReadOnly): number of events registered
     - params:
       - type: event name waited
       - listener: listener
+  - Once(type, listener, prepend := false)
+    - Add a listener to wait for a event. This listener will be removed Once it has been executed
+    - params:
+      - type: event name waited 
+      - callback: listener 
+      - prepend: If ture, add listener to the head of listener list(will be execute earlier)
   - RemoveListener(type, listener)
     - same as `Off`
   - RemoveAllListener(type)
