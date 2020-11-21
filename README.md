@@ -29,12 +29,12 @@ eventsCount(ReadOnly): number of events registered
 
 - Special Event:
   - newListener: fired every times when a new listener is added
-             listener must accept 2 parameters: 
-                type: event name of added listener
+             listener must accept 2 parameters:  
+                type: event name of added listener  
                 listener: added listener
   - removeListener: fired every times when a listener of a event is removed
-             listener must accept 2 parameters: 
-                type: event name of removed listener
+             listener must accept 2 parameters:  
+                type: event name of removed listener  
                 listener: removed listener
 - Method:
   - On(type, callback, prepend := false)
@@ -74,10 +74,10 @@ eventsCount(ReadOnly): number of events registered
   - Emit(type, params*)
     - Emit a specific event 
     - params:
-      - type event name waited
-      - params* params to be passed to each listener
+      - type: event name waited
+      - params*: params to be passed to each listener
   - EmitImmediate(type, params*)
     - Emit a specific event and execute each listener as quick as possible
     - params:
-      - type event name waited
-      - params* params to be passed to each listener
+      - type: event name waited
+      - params*: params to be passed to each listener
