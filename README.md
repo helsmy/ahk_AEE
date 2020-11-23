@@ -26,7 +26,7 @@ emitter.emit("say", "World")     ; fire it
 
 - Property:
   - eventsCount(ReadOnly): number of events registered
-  - maxListener(ReadOnly): the maximum number of listeners that an event can have
+  - maxListener(ReadOnly): defalut value 10, the maximum number of listeners that an event can have
 
 - Special Event:
   - newListener: fired every times when a new listener is added
