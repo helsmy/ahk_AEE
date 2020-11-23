@@ -8,7 +8,7 @@
     A simple event driven framework
 
     for the most simple way:
-        #Persistent
+        #Persistent ; Ensure script keeps running until our timmer is fired
         #include <AEE>
         Hello(words)
         {
@@ -24,6 +24,7 @@
 
     Property:
         eventsCount(ReadOnly): number of events registered
+        maxListener(ReadOnly): the maximum number of listeners that an event can have
 
     Special Event:
         newListener: fired every times when a new listener is added
@@ -33,14 +34,15 @@
         removeListener: fired every times when a listener of a event is removed
                      listener must accept 2 parameters: 
                         type: event name of removed listener
-                        listener: removed listener
+                        listener: removed listener. If more than one listener is removed at once, this parameter passes an array containing all reomved listeners.
 */
 
 
 class AEEmitter
 {
-    static _events := {}
-    static _eventsCount := 0
+    _events := {}
+    _eventsCount := 0
+    _maxListener := 10
 
     eventsCount[]
     {
@@ -52,6 +54,19 @@ class AEEmitter
         set
         {
             throw Exception("Set to read only property", -1, "eventsCount")
+        }
+    }
+
+    maxListener[]
+    {
+        get
+        {
+            return this._maxListener
+        }
+
+        set
+        {
+            throw Exception("Set to read only property", -1, "maxListener")
         }
     }
 
@@ -117,19 +132,16 @@ class AEEmitter
     RemoveListener(type, listener)
     {
         events := this._events, list := events[type]
-        postion := 0
         for p, l in list
         {
-            if (l == listener)
-                postion := p
-        }  
-
-        ; No corresponding listener, do nothing
-        if (!postion)
-            return this
-        list.RemoveAt(postion)
-        if (events.HasKey("removeListener"))
-            this.Emit("removeListener", type, listener)
+            if (l == listener) 
+            {
+                list.RemoveAt(p)
+                if (events.HasKey("removeListener"))
+                    this.Emit("removeListener", type, listener)
+                break
+            }
+        }
         return this
     }
 
@@ -140,8 +152,11 @@ class AEEmitter
     RemoveAllListener(type)
     {
         events := this._events
+        
         if (events.HasKey(type))
-            events[type] := []
+            listeners := events[type], events[type] := []
+        if (events.HasKey("removeListener"))
+            this.Emit("removeListener", type, listeners)
         return this
     }
 
@@ -167,7 +182,11 @@ class AEEmitter
         if (this._events.HasKey(type))
         {
             for _, handler in this._events[type]
+            {
+                if (!IsFunc(handler))
+                    handler := ObjBindMethod(this, "_OnceWapper", type, handler)
                 __AEE_EventDispatcher.Put(handler, params)
+            }
         }
         return true
     }
@@ -182,9 +201,24 @@ class AEEmitter
         if (this._events.HasKey(type))
         {
             for _, handler in this._events[type]
+            {
+                if (!IsFunc(handler))
+                    handler := ObjBindMethod(this, "_OnceWapper", type, handler)
                 __AEE_EventDispatcher.Put(handler, params, true)
+            }
         }
         return true
+    }
+
+    /**
+     *  Set property maxListener
+     */
+    SetMaxListener(number)
+    {
+        n := number&-1
+        if (number != n) 
+            throw Exception("Value Error!", -1, "Need an integer.")
+        this._maxListener := n
     }
 
     /*
@@ -194,15 +228,16 @@ class AEEmitter
     _OnceWapper(type, fn, params*)
     {
         events := this._events, list := events[type]
-        fn.Call(params*)
-        if (list.Length <= 1)
+        ; Once marked listener is contained in a 1 length array
+        fn[1].Call(params*)
+        if (list.Length() <= 1)
             this.RemoveEvent(type)
         else
             this.RemoveListener(type, fn)
     }
     
     /*
-     * Inner method
+     * Inner method.
      * DO NOT CALL IT
      */
     _AddListener(type, callback, prepend := false, isOnce := false)
@@ -217,8 +252,11 @@ class AEEmitter
             this.Emit("newListener", type, callback)
         if (!events.HasKey(type))
             events[type] := [], ++this._eventsCount
+        if (events[type].Length() >= this._maxListener)
+            throw Exception("The number of listeners has reached the maximum.", -2, "Use method SetMaxListener to increase it.")
+        ; mark once by making a non-function callback   
         if (isOnce)
-            callback := ObjBindMethod(this, "_OnceWapper", type, callback)
+            callback := [callback]
         if (!prepend)
             events[type].Push(callback)
         else
