@@ -7,7 +7,7 @@ For the most simple way:
 1. Put AEE.ahk into `YouScriptDir/lib`
 2. Do something like below:
 ```autohotkey
-#Persistent
+#Persistent ; Ensure script keeps running until our timmer is fired
 #include <AEE>
 Hello(words)
 {
@@ -25,7 +25,8 @@ emitter.emit("say", "World")     ; fire it
 ### detail
 
 - Property:
-eventsCount(ReadOnly): number of events registered
+  - eventsCount(ReadOnly): number of events registered
+  - maxListener(ReadOnly): the maximum number of listeners that an event can have
 
 - Special Event:
   - newListener: fired every times when a new listener is added
@@ -35,7 +36,8 @@ eventsCount(ReadOnly): number of events registered
   - removeListener: fired every times when a listener of a event is removed
              listener must accept 2 parameters:  
                 type: event name of removed listener  
-                listener: removed listener
+                listener: removed listener. If more than one listener is removed at once, this parameter passes an array containing all reomved listeners.
+                
 - Method:
   - On(type, callback, prepend := false)
     - Add a listener to wait for a event
@@ -81,3 +83,7 @@ eventsCount(ReadOnly): number of events registered
     - params:
       - type: event name waited
       - params*: params to be passed to each listener
+  - SetMaxListener(number)
+    - Set property maxListener
+    - params:
+      - number: integer number for property maxListener
