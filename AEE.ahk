@@ -137,6 +137,8 @@ class AEEmitter
             if (l == listener) 
             {
                 list.RemoveAt(p)
+                if (list.Length() == 0)
+                    this.RemoveEvent(type)
                 if (events.HasKey("removeListener"))
                     this.Emit("removeListener", type, listener)
                 break
@@ -154,7 +156,8 @@ class AEEmitter
         events := this._events
         
         if (events.HasKey(type))
-            listeners := events[type], events[type] := []
+            listeners := events[type]
+            , this.RemoveEvent(type)
         if (events.HasKey("removeListener"))
             this.Emit("removeListener", type, listeners)
         return this
@@ -221,6 +224,39 @@ class AEEmitter
         this._maxListener := n
     }
 
+    /**
+     *  return number of listeners of a event
+     */
+    ListenerCount(type)
+    {
+        return this._events.HasKey(type) ? this._events[type].Length() : 0
+    }
+
+    /**
+     *  return all listeners(in a array) of a event
+     */
+    Listeners(type)
+    {
+        if (!this._events.HasKey(type))
+            return []
+        all_l := []
+        for _, l in this._events
+            l := IsFunc(l) ? l : l[1]
+            , all_l.Push(l)
+        return all_l
+    }
+
+    /**
+     *  return all events' name(in a array) registered
+     */
+    EventNames()
+    {
+        names := []
+        for name in this._events
+            names.Push(name)
+        return names
+    }
+
     /*
      * Inner wapper for `Once` method to remove listener after executed
      * DO NOT CALL IT
@@ -230,10 +266,7 @@ class AEEmitter
         events := this._events, list := events[type]
         ; Once marked listener is contained in a 1 length array
         fn[1].Call(params*)
-        if (list.Length() <= 1)
-            this.RemoveEvent(type)
-        else
-            this.RemoveListener(type, fn)
+        this.RemoveListener(type, fn)
     }
     
     /*

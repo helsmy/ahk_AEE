@@ -87,3 +87,13 @@ emitter.emit("say", "World")     ; fire it
     - Set property maxListener
     - params:
       - number: integer number for property maxListener
+  - ListenerCount(type)
+    - return number of listeners of a event
+    - params:
+      - type: event name waited
+  - Listeners(type)
+    - return all listeners(in a array) of a event
+    - params:
+      - type: event name waited
+  - EventNames()
+    - return all events' name(in a array) registered
