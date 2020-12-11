@@ -137,8 +137,6 @@ class AEEmitter
             if (l == listener) 
             {
                 list.RemoveAt(p)
-                if (list.Length() == 0)
-                    this.RemoveEvent(type)
                 if (events.HasKey("removeListener"))
                     this.Emit("removeListener", type, listener)
                 break
@@ -156,8 +154,7 @@ class AEEmitter
         events := this._events
         
         if (events.HasKey(type))
-            listeners := events[type]
-            , this.RemoveEvent(type)
+            listeners := events[type], events[type] := []
         if (events.HasKey("removeListener"))
             this.Emit("removeListener", type, listeners)
         return this
@@ -186,7 +183,7 @@ class AEEmitter
         {
             for _, handler in this._events[type]
             {
-                if (!IsFunc(handler))
+                if (handler.Length())
                     handler := ObjBindMethod(this, "_OnceWapper", type, handler)
                 __AEE_EventDispatcher.Put(handler, params)
             }
@@ -205,7 +202,7 @@ class AEEmitter
         {
             for _, handler in this._events[type]
             {
-                if (!IsFunc(handler))
+                if (handler.Length())
                     handler := ObjBindMethod(this, "_OnceWapper", type, handler)
                 __AEE_EventDispatcher.Put(handler, params, true)
             }
@@ -223,7 +220,7 @@ class AEEmitter
             throw Exception("Value Error!", -1, "Need an integer.")
         this._maxListener := n
     }
-
+    
     /**
      *  return number of listeners of a event
      */
@@ -266,7 +263,10 @@ class AEEmitter
         events := this._events, list := events[type]
         ; Once marked listener is contained in a 1 length array
         fn[1].Call(params*)
-        this.RemoveListener(type, fn)
+        if (list.Length() <= 1)
+            this.RemoveEvent(type)
+        else
+            this.RemoveListener(type, fn)
     }
     
     /*
@@ -275,7 +275,7 @@ class AEEmitter
      */
     _AddListener(type, callback, prepend := false, isOnce := false)
     {
-        if (!IsFunc(callback))
+        if (!_IsFuncEx(callback))  ; IsFunc does not work on method, sad
             throw Exception("Value Error", -2, "Listener(callback) must be a function or method")
         if (!this._events)
             this._events := {}
@@ -335,4 +335,10 @@ class __AEE_EventDispatcher
 		if (this.eventQueue.Length() || this.immediateQueue.Length())
 			SetTimer, % DT, -1
 	}
+}
+
+_IsFuncEx(obj)
+{
+    static nBoundFunc := NumGet(&(f := Func("Func").Bind()))
+    return IsFunc(obj) || (NumGet(&obj) == nBoundFunc)
 }
