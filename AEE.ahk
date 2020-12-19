@@ -1,10 +1,11 @@
-/******************************************************
-	Author: helsmy
-	Website: https://github.com/helsmy/ahk_AEE
-	Lisence: LGPLv2.1
-	Plesase redistribute with above information
+/*
+ *****************************************************
+    Author: helsmy
+    Website: https://github.com/helsmy/ahk_AEE
+    Lisence: LGPLv2.1
+    Plesase redistribute with above information
  ******************************************************
- 	
+     
     A simple event driven framework
 
     for the most simple way:
@@ -137,6 +138,8 @@ class AEEmitter
             if (l == listener) 
             {
                 list.RemoveAt(p)
+                if (list.Length() == 0)
+                    this.RemoveEvent(type)
                 if (events.HasKey("removeListener"))
                     this.Emit("removeListener", type, listener)
                 break
@@ -263,10 +266,7 @@ class AEEmitter
         events := this._events, list := events[type]
         ; Once marked listener is contained in a 1 length array
         fn[1].Call(params*)
-        if (list.Length() <= 1)
-            this.RemoveEvent(type)
-        else
-            this.RemoveListener(type, fn)
+        this.RemoveListener(type, fn)
     }
     
     /*
@@ -307,34 +307,34 @@ class __AEE_EventDispatcher
     /*
      *  Based on DBGp_DispatchTimer of Lexikos's dbgp.ahk
      */
-	static eventQueue := []
-	static immediateQueue := []
+    static eventQueue := []
+    static immediateQueue := []
 
-	Put(handler, data, immediate := false)
-	{
-		if !immediate
-			this.eventQueue.Push([handler, data])
-		else
-			this.immediateQueue.Push([handler, data])
-		; Using a single timer ensures that each handler finishes before
-		; the next is called, and that each runs in its own thread.
-		static DT := ObjBindMethod(__AEE_EventDispatcher, "DispatchTimer")
-		SetTimer, % DT, -1
-	}
+    Put(handler, data, immediate := false)
+    {
+        if !immediate
+            this.eventQueue.Push([handler, data])
+        else
+            this.immediateQueue.Push([handler, data])
+        ; Using a single timer ensures that each handler finishes before
+        ; the next is called, and that each runs in its own thread.
+        static DT := ObjBindMethod(__AEE_EventDispatcher, "DispatchTimer")
+        SetTimer, % DT, -1
+    }
 
-	DispatchTimer()
-	{
-		static DT := ObjBindMethod(__AEE_EventDispatcher, "DispatchTimer")
-		; Clear immediateQueue array before fire handler of eventQueue
-		if (next := this.immediateQueue.RemoveAt(1))
-			fn := next[1], %fn%(next[2]*)
-		; Call exactly one handler per new thread.
-		else if next := this.eventQueue.RemoveAt(1)
-			fn := next[1], %fn%(next[2]*)
-		; If the queue is not empty, reset the timer.
-		if (this.eventQueue.Length() || this.immediateQueue.Length())
-			SetTimer, % DT, -1
-	}
+    DispatchTimer()
+    {
+        static DT := ObjBindMethod(__AEE_EventDispatcher, "DispatchTimer")
+        ; Clear immediateQueue array before fire handler of eventQueue
+        if (next := this.immediateQueue.RemoveAt(1))
+            fn := next[1], %fn%(next[2]*)
+        ; Call exactly one handler per new thread.
+        else if next := this.eventQueue.RemoveAt(1)
+            fn := next[1], %fn%(next[2]*)
+        ; If the queue is not empty, reset the timer.
+        if (this.eventQueue.Length() || this.immediateQueue.Length())
+            SetTimer, % DT, -1
+    }
 }
 
 _IsFuncEx(obj)
